@@ -9,11 +9,11 @@
 - [ ] Implement per-profile search history (last 10–15 items), stored as simple JSON: `user.config.json`, `user.search-history.json`.
 - [ ] Switch between Standalone and Overlay modes (Overlay foundation, but implement only Standalone for the first version).
 - [ ] Bindable hotkey for the full workflow (capture + OCR + search + display), including overlay/cloud support.
- - [ ] Make default hotkey for beggining
- - [ ] Provide option to configure the hotkey
+	- [ ] Make default hotkey for beggining
+	- [ ] Provide option to configure the hotkey
 - [ ] Notification area for errors: OCR failures, trade site/network errors, unrecognized screenshots, etc.
- - [ ] Simple toast notifications inside the app
- - [ ] System notifications
+	- [ ] Simple toast notifications inside the app
+	- [ ] System notifications
 - [ ] Smooth window resize/move; compatibility with cloud/streaming desktops.
 
 ### Screenshot & OCR Integration

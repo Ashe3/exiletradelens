@@ -1,3 +1,8 @@
+use std::{
+    process::{Child, Command},
+    sync::{Arc, Mutex},
+};
+
 pub struct OcrService {
     process: Arc<Mutex<Option<Child>>>,
     is_running: Arc<Mutex<bool>>,
@@ -12,10 +17,9 @@ impl OcrService {
     }
 
     pub fn start(&self) -> Result<(), String> {
-        let mut process = self.process.lock.unwrap();
+        let mut process = self.process.lock().unwrap();
 
-        let child = Command
-            .new("python")
+        let child = Command::new("python")
             .arg("ocr_backend.py")
             .spawn()
             .map_err(|e| format!("Failed to spawn OCR: {}", e))?;
@@ -27,7 +31,7 @@ impl OcrService {
     }
 
     pub fn stop(&self) -> Result<(), String> {
-        let mut process = self.process.lock.unwrap();
+        let mut process = self.process.lock().unwrap();
 
         if let Some(mut child) = process.take() {
             child.kill().map_err(|e| format!("Failed to kill: {}", e))?;

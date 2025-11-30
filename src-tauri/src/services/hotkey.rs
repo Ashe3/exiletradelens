@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use tauri::AppHandle;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
@@ -6,32 +7,27 @@ use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 use crate::services::WsClient;
 
 pub fn register_screenshot_hotkey(app: &AppHandle, ws_client: Arc<WsClient>) -> Result<(), String> {
-    let app_clone = app.clone();
-    let ws_clone = ws_client.clone();
-
     let shortcut: Shortcut = "Cmd+D"
         .parse()
         .map_err(|e| format!("Invalid shortcut: {:?}", e))?;
 
-    app.global_shortcut()
-        .on_shortcut(shortcut, move |_app, shortcut, event| {
-            if event.state == tauri_plugin_global_shortcut::ShortcutState::Pressed {
-                println!("Hotkey pressed: {:?}", shortcut);
+    // blocking input while processing image
+    let is_processing = Arc::new(AtomicBool::new(false));
 
-                let app_handle = app_clone.clone();
-                let ws = Arc::clone(&ws_clone);
+    app.global_shortcut()
+        .on_shortcut(shortcut, move |_app, _shortcut, event| {
+            if event.state == tauri_plugin_global_shortcut::ShortcutState::Pressed {
+                if is_processing.load(Ordering::Relaxed) {
+                    return;
+                }
+
+                let ws = Arc::clone(&ws_client);
+                let processing_flag = Arc::clone(&is_processing);
 
                 tauri::async_runtime::spawn(async move {
-                    match handle_screenshot_capture(&app_handle, ws).await {
-                        Ok(result) => {
-                            println!("OCR result: {}", result);
-                            app_handle.emit("ocr-completed", result).ok();
-                        }
-                        Err(e) => {
-                            eprintln!("Error: {}", e);
-                            app_handle.emit("ocr-error", e).ok();
-                        }
-                    }
+                    processing_flag.store(true, Ordering::Relaxed);
+                    handle_screenshot_capture(ws).await.ok();
+                    processing_flag.store(false, Ordering::Relaxed);
                 });
             }
         })
@@ -40,11 +36,7 @@ pub fn register_screenshot_hotkey(app: &AppHandle, ws_client: Arc<WsClient>) -> 
     Ok(())
 }
 
-async fn handle_screenshot_capture(
-    app: &AppHandle,
-    ws_client: Arc<WsClient>,
-) -> Result<String, String> {
-    println!("Capturing screenshot...");
+async fn handle_screenshot_capture(ws_client: Arc<WsClient>) -> Result<String, String> {
     let output = tokio::process::Command::new("screencapture")
         .arg("-ic")
         .output()
@@ -56,26 +48,24 @@ async fn handle_screenshot_capture(
     }
 
     tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
-    println!("Reading from clipboard...");
     let image_data = read_clipboard_image()?;
+
+    const MAX_SIZE: usize = 5 * 1024 * 1024;
+    if image_data.len() > MAX_SIZE {
+        return Err("Image too large".to_string());
+    }
 
     #[cfg(debug_assertions)]
     {
-        tokio::fs::write("debug_screenshot.png", &image_data)
-            .await
-            .map_err(|e| format!("Save failed: {}", e))?;
-        println!("Saved debug_screenshot.png ({} bytes)", image_data.len());
+        tokio::fs::write("../debug_screenshot.png", &image_data).await.ok();
     }
 
-    println!("Sending to OCR...");
-    let result = ws_client.send_image(image_data).await?;
-
-    Ok(result)
+    ws_client.send_image(image_data).await
 }
 
 fn read_clipboard_image() -> Result<Vec<u8>, String> {
     use arboard::Clipboard;
-    use image::{ImageBuffer, ImageOutputFormat};
+    use image::{ImageBuffer, ImageFormat};
     use std::io::Cursor;
 
     let mut clipboard = Clipboard::new().map_err(|e| format!("Clipboard init failed: {}", e))?;
@@ -90,7 +80,7 @@ fn read_clipboard_image() -> Result<Vec<u8>, String> {
             .ok_or("Failed to create image buffer")?;
 
     image::DynamicImage::ImageRgba8(image_buffer)
-        .write_to(&mut buffer, ImageOutputFormat::Png)
+        .write_to(&mut buffer, ImageFormat::Png)
         .map_err(|e| format!("PNG encoding failed: {}", e))?;
 
     Ok(buffer.into_inner())

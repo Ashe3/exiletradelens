@@ -81,6 +81,8 @@ impl OcrService {
         Ok(())
     }
 
+    // mock for future process watcher
+    #[allow(dead_code)]
     pub fn is_running(&self) -> bool {
         let mut child_lock = self.child.lock().unwrap();
 

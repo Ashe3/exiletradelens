@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 use tauri::AppHandle;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
@@ -53,14 +53,16 @@ async fn handle_screenshot_capture(ws_client: Arc<WsClient>) -> Result<String, S
     tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
     let image_data = read_clipboard_image()?;
 
-    const MAX_SIZE: usize = 5 * 1024 * 1024;
-    if image_data.len() > MAX_SIZE {
+    const MAX_IMAGE_SIZE_BYTES: usize = 5 * 1024 * 1024;
+    if image_data.len() > MAX_IMAGE_SIZE_BYTES {
         return Err("Image too large".to_string());
     }
 
     #[cfg(debug_assertions)]
     {
-        tokio::fs::write("../debug_screenshot.png", &image_data).await.ok();
+        tokio::fs::write("../debug_screenshot.png", &image_data)
+            .await
+            .ok();
     }
 
     ws_client.send_image(image_data).await

@@ -35,7 +35,7 @@ async def main():
 		handle_image, 
 		"localhost", 
 		8765,
-		max_size=10 * 1024 * 1024,
+		max_size=5 * 1024 * 1024,
 		ping_interval=None,
 		ping_timeout=None,
 		close_timeout=10

@@ -44,7 +44,6 @@ impl WsClient {
             if let Err(_) = stream.send(Message::Text(base64_img)).await {
                 None
             } else {
-                // Читаем ответ в цикле, игнорируя Ping/Pong
                 loop {
                     match stream.next().await {
                         Some(Ok(Message::Text(text))) => {

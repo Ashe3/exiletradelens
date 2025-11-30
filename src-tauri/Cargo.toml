@@ -1,7 +1,7 @@
 [package]
 name = "exiletradelens"
 version = "0.1.0"
-description = "A Tauri App"
+description = "A tool for analyzing and visualizing Path of Exile trade data."
 authors = ["Anton Shevchenko <korolewsky.anton3@gmail.com>"]
 edition = "2021"
 
@@ -22,4 +22,11 @@ tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-
+tokio = { version = "1", features = ["full"] }
+tokio-tungstenite = "0.23"
+futures-util = "0.3"
+base64 = "0.22"
+arboard = "3"
+image = "0.25"
+tauri-plugin-global-shortcut = "2.3.1"
+once_cell = "1.19"

@@ -11,7 +11,7 @@ pub fn register_screenshot_hotkey(app: &AppHandle, ws_client: Arc<WsClient>) -> 
         .parse()
         .map_err(|e| format!("Invalid shortcut: {:?}", e))?;
 
-    // blocking input while processing image
+    // Flag to prevent concurrent processing while an image is being handled
     let is_processing = Arc::new(AtomicBool::new(false));
 
     app.global_shortcut()

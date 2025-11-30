@@ -47,6 +47,9 @@ async fn handle_screenshot_capture(ws_client: Arc<WsClient>) -> Result<String, S
         return Err("screencapture command failed".to_string());
     }
 
+    // Wait for the clipboard to be populated after the screencapture command.
+    // The 200ms delay was chosen empirically and may need adjustment on slower systems
+    // or under heavy load. If clipboard errors occur, consider increasing this value.
     tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
     let image_data = read_clipboard_image()?;
 

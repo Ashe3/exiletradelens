@@ -3,26 +3,25 @@
 ### UI/UX
 
 - [ ] Main window with PoE version selector (1 or 2) and profile switching.
-	- [ ] Provide session from PoE
+  - [ ] Provide session from PoE
 - [ ] Item text editor with instant re-query feature.
 - [ ] Display of trade search results; allow user to manually adjust recognized item text and query options.
 - [ ] Implement per-profile search history (last 10–15 items), stored as simple JSON: `user.config.json`, `user.search-history.json`.
 - [ ] Switch between Standalone and Overlay modes (Overlay foundation, but implement only Standalone for the first version).
-- [ ] Bindable hotkey for the full workflow (capture + OCR + search + display), including overlay/cloud support.
-	- [ ] Make default hotkey for beggining
-	- [ ] Provide option to configure the hotkey
+- [x] Hotkey for the full workflow (capture + OCR + search + display), including overlay/cloud support.
 - [ ] Notification area for errors: OCR failures, trade site/network errors, unrecognized screenshots, etc.
-	- [ ] Simple toast notifications inside the app
-	- [ ] System notifications
+  - [ ] Simple toast notifications inside the app
+  - [ ] System notifications
 - [ ] Smooth window resize/move; compatibility with cloud/streaming desktops.
 
 ### Screenshot & OCR Integration
 
-- [ ] Use macOS-native screenshot tools, save image to clipboard, forward PNG data to OCR backend.
+- [x] Use macOS-native screenshot tools, save image to clipboard, forward PNG data to OCR backend.
 - [ ] OCR backend as a standalone long-lived process (child, managed and monitored).
-- [ ] Reliable socket or equivalent communication between main app and OCR process.
+  - [ ] Need to add health monitor and restart process in case it died
+  - [x] Setup managable sub(child) process for running OCR from python file
+- [x] Reliable socket or equivalent communication between main app and OCR process.
 - [ ] Graceful error handling: show user-friendly errors and retry options when OCR or screenshotting fails.
-- [ ] Easy mechanism to swap OCR for an ONNX-based engine in the future.
 
 ### Trade Query System
 
@@ -39,7 +38,6 @@
 - [ ] Profile switcher in UI; separate “recent searches” per profile.
 - [ ] Per-profile recent search history (auto-saved to lightweight JSON).
 - [ ] Config/preferences (PoE version, saved window position, hotkey, etc.) stored and updated in local JSON.
-- [ ] Backup/export of configs and search history.
 
 ### Process & Security Management
 
@@ -51,12 +49,24 @@
 
 ### Cloud/Virtual/Streaming Environment Support
 
-- [ ] Test clipboard, screenshot, and windowing in GeForceNOW and other remote/streamed desktop scenarios.
-- [ ] Fallbacks for restricted system environments where screen/clipboard access or hotkeys might not work.
+- [x] Test clipboard, screenshot, and windowing in GeForceNOW and other remote/streamed desktop scenarios.
 
-### Extensibility & Localization
+### Extensibility
+- [ ] All OCR/trading logic modular to allow plugging another OCR provider (e.g., ONNX engine) without major rewrite.
+
+### Future things
+
+#### UX/UI
+
+- [ ] Provide access for users to change hotkey(s) bindings
+- [ ] Backup/export of configs and search history.
+
+#### OCR
+
+- [ ] Easy mechanism to swap OCR for an ONNX-based engine in the future.
+
+#### Locales
 
 - [ ] Architecture: English language only at launch, but enable future extension for additional locales.
-- [ ] All OCR/trading logic modular to allow plugging another OCR provider (e.g., ONNX engine) without major rewrite.
 
 ---

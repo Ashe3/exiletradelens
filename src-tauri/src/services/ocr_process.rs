@@ -66,3 +66,10 @@ impl OcrService {
         }
     }
 }
+
+impl Drop for OcrService {
+    fn drop(&mut self) {
+        println!("Cleaning up OCR process...");
+        self.stop().ok();
+    }
+}

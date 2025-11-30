@@ -1,7 +1,7 @@
 [package]
 name = "exiletradelens"
 version = "0.1.0"
-description = "A Tauri App"
+description = "A tool for analyzing and visualizing Path of Exile trade data."
 authors = ["Anton Shevchenko <korolewsky.anton3@gmail.com>"]
 edition = "2021"
 

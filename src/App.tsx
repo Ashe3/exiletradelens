@@ -1,51 +1,52 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
+import { Tabs } from '@base-ui-components/react/tabs';
+import './App.css';
+import { Header } from './components/Header';
+import { Sidebar } from './components/Sidebar';
+import { useState } from 'react';
+import { Content } from './components/Content';
 
-function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+type TabValue = 'latest' | 'history';
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+const App = () => {
+  const [activeTab, setActiveTab] = useState<TabValue>('latest');
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
-
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
+    <div className="flex flex-col h-screen">
+      <Header />
+      <Tabs.Root
+        value={activeTab}
+        onValueChange={setActiveTab}
+        orientation="vertical"
+        className="flex flex-1"
       >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+        <Sidebar>
+          <Tabs.List className="flex flex-col gap-4 ">
+            <Tabs.Tab
+              value={'latest'}
+              className="px-16 py-4 transition-colors cursor-pointer text-gray-700 data-active:bg-gray-300 data-active:text-blue-600 hover:bg-gray-200 hover:text-blue-500"
+            >
+              Latest search
+            </Tabs.Tab>
+            <Tabs.Tab
+              value={'history'}
+              className="px-16 py-4 transition-colors cursor-pointer text-gray-700 data-active:bg-gray-300 data-active:text-blue-600 hover:bg-gray-200 hover:text-blue-500"
+            >
+              Search history
+            </Tabs.Tab>
+            <Tabs.Indicator />
+          </Tabs.List>
+        </Sidebar>
+        <Content>
+          <Tabs.Panel value="latest">
+            <div>latest search</div>
+          </Tabs.Panel>
+          <Tabs.Panel value="history">
+            <div>search history</div>
+          </Tabs.Panel>
+        </Content>
+      </Tabs.Root>
+    </div>
   );
-}
+};
 
 export default App;

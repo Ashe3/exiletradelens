@@ -18,7 +18,7 @@ export const SwitchVersion = () => {
     <div className="flex items-center space-x-2">
       <span className="text-sm font-medium text-gray-700">PoE</span>
       <Switch.Root
-        // temporariry disable since I don't have an ability to support poe1 yet
+        // temporarily disable since I don't have an ability to support poe1 yet
         disabled
         checked={checked}
         onCheckedChange={handleCheckedChange}

@@ -9,18 +9,17 @@ from pathlib import Path
 script_dir = Path(__file__).parent
 model_dir = script_dir / '.easyocr_models'
 model_dir.mkdir(exist_ok=True)
-
-# TorchfreeOCR uses this environment variable for model storage
 os.environ['TORCHFREE_OCR_MODULE_PATH'] = str(model_dir)
-
-# Now import torchfree_ocr AFTER setting the environment variable
 import torchfree_ocr
 
-# Check what MODULE_PATH is actually being used
-from torchfree_ocr import config
-reader = torchfree_ocr.Reader(["en"])
-
+reader = None
+	
 async def handle_image(websocket):
+	global reader
+	if reader is None:
+		reader = torchfree_ocr.Reader(["en"])
+
+
 	try: 
 		async for message in websocket:
 			try:
@@ -31,7 +30,6 @@ async def handle_image(websocket):
 				await websocket.send(result_str)
 			except Exception as e:
 				error_msg = f"Error processing image: {e}"
-				print(error_msg)
 				await websocket.send(error_msg)
 	except ConnectionClosedError:
 		pass  # Client disconnected normally
@@ -59,4 +57,7 @@ async def main():
 		await asyncio.Future()
 
 if __name__ == "__main__":
-	asyncio.run(main())
+	try:
+		asyncio.run(main())
+	except KeyboardInterrupt:
+		print("Stopped with KeyboardInterrupt")

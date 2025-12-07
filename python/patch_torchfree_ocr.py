@@ -4,7 +4,6 @@ Patch script to disable MD5 check in torchfree_ocr library.
 Run this after installing torchfree_ocr to prevent re-downloading models.
 """
 
-import os
 import sys
 from pathlib import Path
 

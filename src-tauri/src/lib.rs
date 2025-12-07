@@ -3,10 +3,12 @@ mod services;
 use once_cell::sync::OnceCell;
 use services::{register_screenshot_hotkey, OcrService, WsClient};
 use std::sync::Arc;
+use tauri::AppHandle;
 use tokio::time::{sleep, Duration};
 
 static WS_CLIENT: OnceCell<Arc<WsClient>> = OnceCell::new();
 static OCR_PROCESS: OnceCell<Arc<OcrService>> = OnceCell::new();
+static APP_HANDLE: OnceCell<AppHandle> = OnceCell::new();
 
 pub fn run() {
     tauri::Builder::default()
@@ -32,6 +34,7 @@ pub fn run() {
 
                 OCR_PROCESS.set(ocr_process).ok();
                 WS_CLIENT.set(ws_client.clone()).ok();
+                APP_HANDLE.set(app_handle.clone()).ok();
 
                 if let Err(e) = register_screenshot_hotkey(&app_handle, ws_client) {
                     eprintln!("Hotkey failed: {}", e);

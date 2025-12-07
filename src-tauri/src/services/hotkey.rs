@@ -1,10 +1,9 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
+use crate::services::WsClient;
 use tauri::AppHandle;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
-
-use crate::services::WsClient;
 
 pub fn register_screenshot_hotkey(app: &AppHandle, ws_client: Arc<WsClient>) -> Result<(), String> {
     let shortcut: Shortcut = "Cmd+D"
@@ -70,23 +69,28 @@ async fn handle_screenshot_capture(ws_client: Arc<WsClient>) -> Result<String, S
 
 fn read_clipboard_image() -> Result<Vec<u8>, String> {
     use arboard::Clipboard;
-    use image::{ImageBuffer, ImageFormat};
+    use image::{DynamicImage, ImageBuffer, ImageFormat};
     use std::io::Cursor;
 
     let mut clipboard = Clipboard::new().map_err(|e| format!("Clipboard init failed: {}", e))?;
-
     let img = clipboard
         .get_image()
         .map_err(|e| format!("No image in clipboard: {}", e))?;
 
     let mut buffer = Cursor::new(Vec::new());
-    let image_buffer =
+    let image_buffer: ImageBuffer<image::Rgba<u8>, Vec<u8>> =
         ImageBuffer::from_raw(img.width as u32, img.height as u32, img.bytes.into_owned())
             .ok_or("Failed to create image buffer")?;
 
-    image::DynamicImage::ImageRgba8(image_buffer)
+    let dynamic = DynamicImage::ImageRgba8(image_buffer);
+    let mut gray_image = dynamic.to_luma8();
+
+    for pix in gray_image.pixels_mut() {
+        pix[0] = if pix[0] < 90 { 0 } else { 255 };
+    }
+
+    DynamicImage::ImageLuma8(gray_image)
         .write_to(&mut buffer, ImageFormat::Png)
         .map_err(|e| format!("PNG encoding failed: {}", e))?;
-
     Ok(buffer.into_inner())
 }

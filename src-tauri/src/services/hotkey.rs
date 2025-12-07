@@ -2,6 +2,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use crate::services::WsClient;
+use image::Luma;
 use tauri::AppHandle;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 
@@ -50,7 +51,7 @@ async fn handle_screenshot_capture(ws_client: Arc<WsClient>) -> Result<String, S
     // The 200ms delay was chosen empirically and may need adjustment on slower systems
     // or under heavy load. If clipboard errors occur, consider increasing this value.
     tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
-    let image_data = read_clipboard_image()?;
+    let image_data = read_clipboard_image(90)?;
 
     const MAX_IMAGE_SIZE_BYTES: usize = 5 * 1024 * 1024;
     if image_data.len() > MAX_IMAGE_SIZE_BYTES {
@@ -67,9 +68,9 @@ async fn handle_screenshot_capture(ws_client: Arc<WsClient>) -> Result<String, S
     ws_client.send_image(image_data).await
 }
 
-fn read_clipboard_image() -> Result<Vec<u8>, String> {
+fn read_clipboard_image(threshold: u8) -> Result<Vec<u8>, String> {
     use arboard::Clipboard;
-    use image::{DynamicImage, ImageBuffer, ImageFormat};
+    use image::{DynamicImage, ImageBuffer, ImageFormat, Rgba};
     use std::io::Cursor;
 
     let mut clipboard = Clipboard::new().map_err(|e| format!("Clipboard init failed: {}", e))?;
@@ -78,18 +79,27 @@ fn read_clipboard_image() -> Result<Vec<u8>, String> {
         .map_err(|e| format!("No image in clipboard: {}", e))?;
 
     let mut buffer = Cursor::new(Vec::new());
-    let image_buffer: ImageBuffer<image::Rgba<u8>, Vec<u8>> =
+    let image_buffer: ImageBuffer<Rgba<u8>, Vec<u8>> =
         ImageBuffer::from_raw(img.width as u32, img.height as u32, img.bytes.into_owned())
             .ok_or("Failed to create image buffer")?;
 
-    let dynamic = DynamicImage::ImageRgba8(image_buffer);
-    let mut gray_image = dynamic.to_luma8();
+    let (width, height) = image_buffer.dimensions();
+    let mut out_image = ImageBuffer::<Luma<u8>, Vec<u8>>::new(width, height);
 
-    for pix in gray_image.pixels_mut() {
-        pix[0] = if pix[0] < 90 { 0 } else { 255 };
+    for (x, y, rgba) in image_buffer.enumerate_pixels() {
+        let r = rgba[0];
+        let g = rgba[1];
+        let b = rgba[2];
+
+        if r >= threshold && r.saturating_sub(g) > 33 && r.saturating_sub(b) > 33 {
+            out_image.put_pixel(x, y, Luma([255]));
+        } else {
+            let gray = (0.299 * r as f32 + 0.587 * g as f32 + 0.114 * b as f32) as u8;
+            out_image.put_pixel(x, y, Luma([if gray < threshold { 0 } else { 255 }]));
+        }
     }
 
-    DynamicImage::ImageLuma8(gray_image)
+    DynamicImage::ImageLuma8(out_image)
         .write_to(&mut buffer, ImageFormat::Png)
         .map_err(|e| format!("PNG encoding failed: {}", e))?;
     Ok(buffer.into_inner())

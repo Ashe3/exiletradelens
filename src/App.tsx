@@ -2,13 +2,24 @@ import { Tabs } from '@base-ui-components/react/tabs';
 import './App.css';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Content } from './components/Content';
 
 type TabValue = 'latest' | 'history';
 
+import { listen } from '@tauri-apps/api/event';
+
 const App = () => {
   const [activeTab, setActiveTab] = useState<TabValue>('latest');
+
+  useEffect(() => {
+    const unlisten = listen('ocr-result-received', (event) => {
+      console.log('Received:', event.payload);
+    });
+    return () => {
+      unlisten.then((f) => f());
+    };
+  }, []);
 
   return (
     <div className="flex flex-col h-screen">

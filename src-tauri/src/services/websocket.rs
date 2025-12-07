@@ -1,5 +1,8 @@
+use crate::services::ocr_validator::OcrValidator;
+use crate::APP_HANDLE;
 use base64::{engine::general_purpose, Engine as _};
 use futures_util::{SinkExt, StreamExt};
+use tauri::Emitter;
 use tokio::net::TcpStream;
 use tokio::sync::Mutex;
 use tokio_tungstenite::{connect_async, tungstenite::Message, MaybeTlsStream, WebSocketStream};
@@ -9,6 +12,7 @@ type WsStream = WebSocketStream<MaybeTlsStream<TcpStream>>;
 pub struct WsClient {
     url: String,
     stream: Mutex<Option<WsStream>>,
+    validator: OcrValidator,
 }
 
 impl WsClient {
@@ -16,6 +20,7 @@ impl WsClient {
         Self {
             url: url.to_string(),
             stream: Mutex::new(None),
+            validator: OcrValidator::new(),
         }
     }
 
@@ -72,7 +77,15 @@ impl WsClient {
         };
 
         match result {
-            Some(Ok(response)) => Ok(response),
+            Some(Ok(response)) => {
+                if let Some(app_handle) = APP_HANDLE.get() {
+                    app_handle
+                        .emit("ocr-result-received", response.clone())
+                        .ok();
+                }
+
+                Ok(response)
+            }
             Some(Err(e)) => Err(e),
             None => {
                 *stream_guard = None;
